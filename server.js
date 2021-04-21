@@ -4,6 +4,9 @@ const connectDB = require("./config/db");
 const app = express();
 // connect Database
 connectDB();
+// Init Middleware
+// use express.json for body parser and reading data from req.body
+app.use(express.json({ extended: false }));
 
 // create a single endpoint
 app.get("/", (req, res) => res.send("API Running"));
