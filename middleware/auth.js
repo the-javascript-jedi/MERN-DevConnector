@@ -13,6 +13,7 @@ module.exports = function (req, res, next) {
   try {
     // to decode the token we need the original token and the jwtsecret
     const decoded = jwt.verify(token, config.get("jwtSecret"));
+    // the decoded.user will contain the decoded user id from mongodb set in (routes/api/users.js -- const payload = { user: { id: user.id, }, };)
     req.user = decoded.user;
     next();
   } catch (err) {

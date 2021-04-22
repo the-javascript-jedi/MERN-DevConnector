@@ -14,7 +14,7 @@ const { check, validationResult } = require("express-validator/check");
 const User = require("../../models/User");
 
 // @route   POST api/users
-// @desc    Test route
+// @desc    Register User
 // @access  Public
 // Registration route
 // for using express validation we add check as a second parameter to POST
