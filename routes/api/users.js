@@ -4,6 +4,10 @@ const router = express.Router();
 const gravatar = require("gravatar");
 // bcrypt for password encryption
 const bcrypt = require("bcryptjs");
+// bring jwt token
+const jwt = require("jsonwebtoken");
+// config to get the jwt secret
+const config = require("config");
 // express-validator
 const { check, validationResult } = require("express-validator/check");
 // User Model
@@ -67,7 +71,26 @@ router.post(
       // save to db--this will return a promise so we use await keyword (else we have to use .then())
       await user.save();
       //return jsonwebtoken--in the front end when a user registers we want them to get logged in right away, and in order to be logged in we need that token.
-      res.send("User Registered--Success");
+      //res.send("User Registered--Success");
+      const payload = {
+        user: {
+          id: user.id, //user.id is the _id we receive from mongodb promise, since we use mongoose we can directly use.id insted of ._id
+        },
+      };
+      // json web token
+      // inside the callback (err, token), we get either the err or the token,if no error we send the token back to the client
+      jwt.sign(
+        payload,
+        config.get("jwtSecret"),
+        { expiresIn: 360000 },
+        (err, token) => {
+          if (err) {
+            throw err;
+          } else {
+            res.json({ token });
+          }
+        }
+      );
     } catch (err) {
       console.error("err.message", err.message);
       res.status(500).send("Server error");

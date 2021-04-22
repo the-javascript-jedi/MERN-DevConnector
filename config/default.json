@@ -1,3 +1,4 @@
 {
-    "mongoURI":"mongodb+srv://webdev-mongodb:webdev-mongodb@devconnector.ahxye.mongodb.net/test"
+    "mongoURI":"mongodb+srv://webdev-mongodb:webdev-mongodb@devconnector.ahxye.mongodb.net/test",
+    "jwtSecret":"mysecrettoken"
 }
