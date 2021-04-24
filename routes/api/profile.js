@@ -27,10 +27,11 @@ router.get("/me", auth, async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
-// @route   POST api/profile/me
+// @route   POST api/profile/
 // @desc    Create or update user profile
 // @access  Private
-// we need the auth middleware as well as the validation middleware
+// Create a user profile for a particular logged in user , we get the logged in user id through JWT
+//we need the auth middleware as well as the validation middleware
 router.post(
   "/",
   [
@@ -63,6 +64,7 @@ router.post(
     } = req.body;
     // Build the Profile object from request data if it is present in the request.body
     const profileFields = {};
+    // we get the user id from decoded token (req.user.id)
     profileFields.user = req.user.id;
     if (company) profileFields.company = company;
     if (website) profileFields.website = website;
@@ -113,4 +115,43 @@ router.post(
     }
   }
 );
+// @route   GET api/profile
+// @desc    Get all profiles
+// @access  Public
+router.get("/", async (req, res) => {
+  try {
+    // populate ['name','avatar'] from user collection
+    const profiles = await Profile.find().populate("user", ["name", "avatar"]);
+    res.json(profiles);
+  } catch (err) {
+    console.error("err.message--profile.js--GET api/profile", err.message);
+    res.status(500).send("Server Error");
+  }
+});
+// get prfiles by the user id
+// @route   GET api/profile/user/user_id
+// @desc    Get profiles by user ID
+// @access  Public
+router.get("/user/:user_id", async (req, res) => {
+  try {
+    // findOne - only find one user
+    const profile = await Profile.findOne({
+      user: req.params.user_id,
+    }).populate("user", ["name", "avatar"]);
+    // no profile
+    if (!profile) return res.status(400).json({ msg: "Profile Not Found!!!" });
+    // when profile with matching id is found return the profile
+    res.json(profile);
+  } catch (err) {
+    console.error("err.message--profile.js--GET api/profile", err.message);
+    /*  the application always expects a mongoDb User object, so if we send a invalid user object 
+    eg:api/profile/user/user/:1 instead of api/profile/user/6083ceca38d8734c1884c6c8
+    the catch will not accept user_id 1 and will throw a server error so we need to excuse ObjectID as error message
+    */
+    if (err.kind === "ObjectId") {
+      return res.status(400).json({ msg: "Profile Not Found!!!" });
+    }
+    res.status(500).send("Server Error--Profile.js");
+  }
+});
 module.exports = router;
