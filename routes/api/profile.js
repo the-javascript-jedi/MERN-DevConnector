@@ -227,7 +227,7 @@ router.put(
       // return whole profile after saving
       res.json(profile);
     } catch (err) {
-      console.error("error--profile.js--api/profile/experience");
+      console.error("error--profile.js--api/profile/experience", err.message);
       res.status(500).send("Server Error");
     }
   }
@@ -256,7 +256,90 @@ router.delete("/experience/:exp_id", auth, async (req, res) => {
     // send the updated profile as response
     res.json(profile);
   } catch (err) {
-    console.error("error--profile.js--/experience/:exp_id");
+    console.error("error--profile.js--/experience/:exp_id", err.message);
+    res.status(500).send("Server Error");
+  }
+});
+// @route   PUT api/profile/education
+// @desc    Add profile education
+// @access  Private
+router.put(
+  "/education",
+  [
+    auth,
+    [
+      check("school", "School is required").not().isEmpty(),
+      check("degree", "Degree is required").not().isEmpty(),
+      check("fieldofstudy", "Field of Study is required").not().isEmpty(),
+      check("from", "From date is required").not().isEmpty(),
+    ],
+  ],
+  async (req, res) => {
+    // do a validation for the req parameters
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array });
+    }
+    // destructure parameters from req.body
+    const {
+      school,
+      degree,
+      fieldofstudy,
+      from,
+      to,
+      current,
+      description,
+    } = req.body;
+    // create new object with education details that user submits
+    const newEdu = {
+      school,
+      degree,
+      fieldofstudy,
+      from,
+      to,
+      current,
+      description,
+    };
+    try {
+      // get profile bty user id
+      const profile = await Profile.findOne({ user: req.user.id });
+      console.log("profile", profile);
+      //most recent education comes first when we use unshift
+      profile.education.unshift(newEdu);
+      await profile.save();
+      // return whole profile after saving
+      res.json(profile);
+    } catch (err) {
+      console.error("error--profile.js--api/profile/education", err.message);
+      res.status(500).send("Server Error");
+    }
+  }
+);
+// @route   DELETE api/profile/education/:edu_id
+// @desc    Delete education from profile
+// @access  Private
+router.delete("/education/:edu_id", auth, async (req, res) => {
+  try {
+    // get profile bty user id
+    const profile = await Profile.findOne({ user: req.user.id });
+    // Get remove index
+    /*.indexOf example
+    const beasts = ['ant', 'bison', 'camel', 'duck', 'bison'];
+    console.log(beasts.indexOf('bison'));
+    // expected output: 1
+    */
+    // we need to map through education and pass in item and return the id, we chain on the indexOf and mmatch it to the passed parameter from the request params(req.params.:edu_id)
+    const removeIndex = profile.education
+      .map((item) => item.id)
+      .indexOf(req.params.edu_id);
+    // take out only the education we need to remove
+    profile.education.splice(removeIndex, 1);
+    // save the modified profile
+    await profile.save();
+    // send the updated profile as response
+    res.json(profile);
+  } catch (err) {
+    console.error("error--profile.js--/education/:edu_id", err.message);
     res.status(500).send("Server Error");
   }
 });
