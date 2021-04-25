@@ -128,7 +128,7 @@ router.get("/", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
-// get prfiles by the user id
+// get profiles by the user id
 // @route   GET api/profile/user/user_id
 // @desc    Get profiles by user ID
 // @access  Public
@@ -152,6 +152,112 @@ router.get("/user/:user_id", async (req, res) => {
       return res.status(400).json({ msg: "Profile Not Found!!!" });
     }
     res.status(500).send("Server Error--Profile.js");
+  }
+});
+// get profiles by the user id
+// @route   DELETE api/profile/
+// @desc    Delete Profile, use & posts
+// @access  Private
+router.delete("/", auth, async (req, res) => {
+  try {
+    //@todo - remove users posts
+    // Remove Profile
+    // findOne - only find one user, we have access to token to get the user id in req.user.id
+    await Profile.findOneAndRemove({
+      user: req.user.id,
+    });
+    // Remove User
+    await User.findOneAndRemove({ _id: req.user.id });
+
+    // send a response message
+    res.json({ msg: "User Deleted" });
+  } catch (err) {
+    console.error("err.message--profile.js--GET api/profile", err.message);
+    if (err.kind === "ObjectId") {
+      return res.status(400).json({ msg: "Profile Not Found!!!" });
+    }
+    res.status(500).send("Server Error--Profile.js");
+  }
+});
+// @route   PUT api/profile/experience
+// @desc    Add profile experience
+// @access  Private
+router.put(
+  "/experience",
+  [
+    auth,
+    [
+      check("title", "Title is required").not().isEmpty(),
+      check("company", "Company is required").not().isEmpty(),
+      check("from", "From date is required").not().isEmpty(),
+    ],
+  ],
+  async (req, res) => {
+    // do a validation for the req parameters
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array });
+    }
+    // destructure parameters from req.body
+    const {
+      title,
+      company,
+      location,
+      from,
+      to,
+      current,
+      description,
+    } = req.body;
+    // create new object with experience details that user submits
+    const newExp = {
+      title,
+      company,
+      location,
+      from,
+      to,
+      current,
+      description,
+    };
+    try {
+      // get profile bty user id
+      const profile = await Profile.findOne({ user: req.user.id });
+      //most recent experience comes first when we use unshift
+      profile.experience.unshift(newExp);
+      await profile.save();
+      // return whole profile after saving
+      res.json(profile);
+    } catch (err) {
+      console.error("error--profile.js--api/profile/experience");
+      res.status(500).send("Server Error");
+    }
+  }
+);
+// @route   DELETE api/profile/experience/:exp_id
+// @desc    Delete Experience from profile
+// @access  Private
+router.delete("/experience/:exp_id", auth, async (req, res) => {
+  try {
+    // get profile bty user id
+    const profile = await Profile.findOne({ user: req.user.id });
+    // Get remove index
+    /*.indexOf example
+    const beasts = ['ant', 'bison', 'camel', 'duck', 'bison'];
+    console.log(beasts.indexOf('bison'));
+    // expected output: 1
+    */
+    // we need to map through experience and pass in item and return the id, we chain on the indexOf and mmatch it to the passed parameter from the request params(req.params.:exp_id)
+    const removeIndex = profile.experience
+      .map((item) => item.id)
+      .indexOf(req.params.exp_id);
+    // take out only the experience we need to remove
+    profile.experience.splice(removeIndex, 1);
+    // save the modified profile
+    await profile.save();
+    // send the updated profile as response
+    res.json(profile);
+  } catch (err) {
+    console.error("error--profile.js--/experience/:exp_id");
+    res.status(500).send("Server Error");
   }
 });
 module.exports = router;
