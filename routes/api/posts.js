@@ -41,4 +41,67 @@ router.post(
   }
 );
 
+// @route   GET api/posts
+// @desc    Get all posts
+// @access  Private
+router.get("/", auth, async (req, res) => {
+  try {
+    // find and sort posts by most recent=(date:-1),oldest first=(date:1)
+    const posts = await Post.find().sort({ date: -1 });
+    res.json(posts);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+// @route   GET api/posts/:id
+// @desc    Get post by ID
+// @access  Private
+router.get("/:id", auth, async (req, res) => {
+  try {
+    // find post by id
+    const post = await Post.findById(req.params.id);
+    // if post is not present send back error response
+    if (!post) {
+      return res.status(404).json({ msg: "Post Not found" });
+    }
+    res.json(post);
+  } catch (err) {
+    console.error(err.message);
+    // if id is not a valid formatted mongodb object id return post not found
+    if (err.kind === "ObjectId") {
+      return res.status(404).json({ msg: "Post Not Found" });
+    }
+    res.status(500).send("Server Error");
+  }
+});
+// @route   DELETE api/posts/:id
+// @desc    Delete a Post
+// @access  Private
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    // find post by id
+    const post = await Post.findById(req.params.id);
+    // if post is not present send back error response
+    if (!post) {
+      return res.status(404).json({ msg: "Post Not found" });
+    }
+    console.log("post--DELETE api/posts/:id", post);
+    // make sure the user deleting the post is the user that owns the post
+    // check user
+    if (post.user.toString() !== req.user.id) {
+      return res.status(401).json({ msg: "User Not Authorized" });
+    }
+    // remove the post
+    await post.remove();
+    res.json({ msg: "Post Removed" });
+  } catch (err) {
+    console.error(err.message);
+    // if id is not a valid formatted mongodb object id return post not found
+    if (err.kind === "ObjectId") {
+      return res.status(404).json({ msg: "Post Not Found" });
+    }
+    res.status(500).send("Server Error");
+  }
+});
 module.exports = router;
