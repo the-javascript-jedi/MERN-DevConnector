@@ -90,7 +90,6 @@ router.post(
     if (instagram) profileFields.social.instagram = instagram;
 
     // after getting all the properties inside the profile field, we need to update and insert the data
-
     try {
       // find profile by user
       //user field is the object_id, we can match it to the req.user.id coming from the token
